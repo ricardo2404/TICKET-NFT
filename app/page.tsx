@@ -17,6 +17,7 @@ import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { QRCodeCanvas } from "qrcode.react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { motion } from "framer-motion";
+import { Zap, Plus, Ticket as TicketIcon, ShoppingCart, QrCode, CheckCircle, TrendingUp, Settings } from "lucide-react";
 
 // 🔥 FIREBASE
 import { db } from "../lib/firebase";
@@ -227,22 +228,61 @@ export default function Home() {
   if (!user) return <Login />;
 
   return (
-    <div className="flex">
+    <div className="flex h-screen" style={{ background: "#0a0f1e" }}>
 
       <Sidebar setView={setView} />
 
-      <div className="flex-1 p-6 space-y-4 bg-gray-100 min-h-screen">
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto" style={{ background: "#0a0f1e" }}>
 
-        <WalletMultiButton />
+        {/* BIENVENIDA */}
+        <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-gradient-to-r from-[rgba(15,23,42,0.6)] to-[rgba(124,58,237,0.2)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-8 text-white">
+          <h2 className="text-3xl font-bold mb-2">¡Bienvenido, {user?.username}! 🚀</h2>
+          <p className="text-lg text-slate-300 mb-4">Impulsado por Solana</p>
+          <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#7c3aed] to-[#06b6d4] mb-2">El futuro del ticketing</h3>
+          <p className="text-xl font-semibold text-slate-100 mb-3">ya está aquí</p>
+          <p className="text-slate-300">Compra, vende y valida entradas como NFTs en la blockchain más rápida del mundo.</p>
+        </div>
+
+        {/* FEATURES */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5">
+            <h3 className="text-base font-bold text-white mb-2">Tickets NFT</h3>
+            <p className="text-sm text-slate-300">Cada entrada es un NFT único en la blockchain de Solana, imposible de falsificar.</p>
+          </div>
+
+          <div className="rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5">
+            <h3 className="text-base font-bold text-white mb-2">Validación QR</h3>
+            <p className="text-sm text-slate-300">Escanea y verifica al instante la autenticidad de cada ticket.</p>
+          </div>
+
+          <div className="rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5">
+            <h3 className="text-base font-bold text-white mb-2">Reventa Segura</h3>
+            <p className="text-sm text-slate-300">Mercado secundario transparente con precios justos y trazabilidad.</p>
+          </div>
+
+          <div className="rounded-xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5">
+            <h3 className="text-base font-bold text-white mb-2">Financiación Transparente</h3>
+            <p className="text-sm text-slate-300">Los organizadores recaudan fondos de forma abierta y verificable.</p>
+          </div>
+        </div>
+
+        {/* WALLET Y META */}
+        <div className="flex justify-between items-center">
+          <WalletMultiButton />
+        </div>
 
         {/* 💰 FINANCIAMIENTO */}
-        <div className="bg-white p-4 rounded shadow">
-          <p>💰 {funds}/{goal} SOL</p>
+        <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp className="h-5 w-5 text-[#7c3aed]" />
+            <h3 className="font-semibold text-slate-100">Meta de Financiamiento</h3>
+          </div>
+          <p className="text-sm mb-3 text-slate-300">💰 {funds}/{goal} SOL</p>
 
-          <div className="w-full bg-gray-200 h-2 rounded mt-2">
+          <div className="w-full bg-[rgba(255,255,255,0.1)] h-2 rounded-full overflow-hidden">
             <div
-              className="bg-green-500 h-2 rounded"
-              style={{ width: `${(funds / goal) * 100}%` }}
+              className="h-2 rounded-full"
+              style={{ width: `${(funds / goal) * 100}%`, background: "linear-gradient(90deg, #7c3aed, #06b6d4)" }}
             ></div>
           </div>
         </div>
@@ -250,102 +290,153 @@ export default function Home() {
         {/* EVENTOS */}
         {view === "home" && (
           <div className="grid gap-4">
-            {events.map((event) => (
-              <motion.div
-                key={event.id}
-                whileHover={{ scale: 1.03 }}
-                className="bg-white p-4 rounded shadow"
-              >
-                <h2 className="text-xl font-bold">{event.name}</h2>
-
-                <button
-                  onClick={mintNFT}
-                  className="bg-blue-600 text-white p-2 mt-2 rounded"
+            {events.length === 0 ? (
+              <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl p-8 text-center text-slate-400">
+                <TicketIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-white font-semibold">No hay eventos disponibles</p>
+              </div>
+            ) : (
+              events.map((event) => (
+                <motion.div
+                  key={event.id}
+                  whileHover={{ scale: 1.02 }}
+                  className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 text-white"
                 >
-                  Comprar Ticket
-                </button>
-              </motion.div>
-            ))}
+                  <h2 className="text-lg font-bold text-white mb-3">{event.name}</h2>
+
+                  <button
+                    onClick={mintNFT}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-[rgba(124,58,237,0.6)] bg-[rgba(124,58,237,0.25)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(124,58,237,0.45)]"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Comprar Ticket
+                  </button>
+                </motion.div>
+              ))
+            )}
           </div>
         )}
 
         {/* PERFIL */}
         {view === "profile" && (
           <div>
-            <h2 className="text-xl font-bold mb-2">Mis Tickets</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Mis Tickets</h2>
 
-            {tickets.map((t, i) => (
-              <div key={i} className="bg-white p-3 mt-2 rounded shadow">
-
-                <QRCodeCanvas value={t} size={120} />
-
-                <button
-                  onClick={() => validarNFT(t)}
-                  className="bg-green-600 text-white w-full mt-2 p-1 rounded"
-                >
-                  Validar
-                </button>
-
-                <button
-                  onClick={() =>
-                    sellTicket({
-                      mint: t,
-                      owner: publicKey?.toBase58(),
-                    })
-                  }
-                  className="bg-yellow-600 text-white w-full mt-2 p-1 rounded"
-                >
-                  Vender
-                </button>
-
+            {tickets.length === 0 ? (
+              <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl p-8 text-center text-slate-400">
+                <TicketIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-white font-semibold">No tienes tickets aún</p>
               </div>
-            ))}
+            ) : (
+              <div className="grid gap-4">
+                {tickets.map((t, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ scale: 1.02 }}
+                    className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 text-white"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-slate-400 break-all">{t.slice(0, 16)}...</span>
+                      <QrCode className="h-4 w-4 text-[#06b6d4]" />
+                    </div>
+                    <div className="flex justify-center mb-4">
+                      <QRCodeCanvas value={t} size={100} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => validarNFT(t)}
+                        className="flex items-center justify-center gap-1 rounded-lg border border-[rgba(6,182,212,0.5)] bg-[rgba(6,182,212,0.2)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[rgba(6,182,212,0.35)]"
+                      >
+                        <CheckCircle className="h-3 w-3" />
+                        Validar
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          sellTicket({
+                            mint: t,
+                            owner: publicKey?.toBase58(),
+                          })
+                        }
+                        className="flex items-center justify-center gap-1 rounded-lg border border-[rgba(124,58,237,0.5)] bg-[rgba(124,58,237,0.2)] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[rgba(124,58,237,0.35)]"
+                      >
+                        <TrendingUp className="h-3 w-3" />
+                        Vender
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* MARKET */}
         {view === "market" && (
           <div>
-            <h2 className="text-xl font-bold">Marketplace</h2>
+            <h2 className="text-xl font-bold text-white mb-4">Marketplace</h2>
 
-            {market.map((t) => (
-              <div key={t.id} className="bg-white p-3 mt-2 rounded shadow">
-                <p className="text-xs break-all">{t.mint}</p>
-
-                <button
-                  onClick={() => buyTicket(t)}
-                  className="bg-green-600 text-white p-2 mt-2 rounded w-full"
-                >
-                  Comprar por {t.price} SOL
-                </button>
+            {market.length === 0 ? (
+              <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl p-8 text-center text-slate-400">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p className="text-white font-semibold">No hay tickets disponibles</p>
               </div>
-            ))}
+            ) : (
+              <div className="grid gap-4">
+                {market.map((t) => (
+                  <motion.div
+                    key={t.id}
+                    whileHover={{ scale: 1.02 }}
+                    className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 text-white"
+                  >
+                    <p className="text-xs text-slate-400 break-all mb-3">{t.mint}</p>
+
+                    <button
+                      onClick={() => buyTicket(t)}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-[rgba(6,182,212,0.6)] bg-[rgba(6,182,212,0.25)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[rgba(6,182,212,0.45)]"
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      Comprar por {t.price} SOL
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* ORGANIZADOR */}
         {view === "organizer" && (
-          <div className="bg-white p-4 rounded shadow space-y-3">
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 space-y-4 text-white">
 
-            <h2 className="text-xl font-bold">Crear Evento</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Plus className="h-5 w-5 text-[#7c3aed]" />
+              <h2 className="text-xl font-bold">Crear Evento</h2>
+            </div>
 
-            <input
-              placeholder="Nombre del evento"
-              className="border p-2 w-full rounded"
-              value={newEvent}
-              onChange={(e) => setNewEvent(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <input
+                placeholder="Nombre del evento"
+                className="flex-1 rounded-lg border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.06)] px-4 py-2 text-sm text-white placeholder:text-slate-500 outline-none"
+                value={newEvent}
+                onChange={(e) => setNewEvent(e.target.value)}
+              />
+              <button
+                onClick={createEvent}
+                className="rounded-lg border border-[rgba(124,58,237,0.6)] bg-[rgba(124,58,237,0.25)] px-6 py-2 font-semibold text-white transition hover:bg-[rgba(124,58,237,0.45)]"
+              >
+                Crear
+              </button>
+            </div>
 
-            <button
-              onClick={createEvent}
-              className="bg-purple-600 text-white p-2 rounded w-full"
-            >
-              Crear Evento
-            </button>
-
-            <div>
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-300 mb-3">Eventos Creados</h3>
               {events.map((e) => (
-                <div key={e.id} className="border p-2 mt-2 rounded">
+                <div
+                  key={e.id}
+                  className="rounded-lg border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] p-3 mt-2 text-sm text-slate-100"
+                >
                   {e.name}
                 </div>
               ))}
@@ -355,22 +446,26 @@ export default function Home() {
 
         {/* ADMIN */}
         {view === "admin" && (
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-xl font-bold">Panel Admin</h2>
-            <p>Control total del sistema</p>
+          <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 text-white">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-3">
+              <Settings className="h-5 w-5 text-[#06b6d4]" />
+              Panel Admin
+            </h2>
+            <p className="text-sm text-slate-300">Control total del sistema</p>
           </div>
         )}
 
         <button
           onClick={() => setScannerActive(true)}
-          className="bg-black text-white p-2 rounded"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[rgba(6,182,212,0.6)] bg-[rgba(6,182,212,0.25)] px-4 py-2 font-semibold text-white transition hover:bg-[rgba(6,182,212,0.45)]"
         >
+          <QrCode className="h-4 w-4" />
           Escanear QR
         </button>
 
         <div id="reader"></div>
 
-        {status && <p>{status}</p>}
+        {status && <p className="text-sm p-3 rounded-lg bg-[rgba(124,58,237,0.2)] border border-[rgba(124,58,237,0.5)] text-white">{status}</p>}
       </div>
     </div>
   );
