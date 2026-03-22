@@ -35,7 +35,7 @@ export default function Home() {
   const [status, setStatus] = useState("");
   const [scannerActive, setScannerActive] = useState(false);
 
-  // 💰 FINANCIAMIENTO (NO MODIFICADO)
+  // 💰 FINANCIAMIENTO
   const [funds, setFunds] = useState(0);
   const goal = 5;
 
@@ -52,7 +52,7 @@ export default function Home() {
 
   const connection = new Connection("https://api.devnet.solana.com");
 
-  // 🎟️ NFT ORIGINAL (NO MODIFICADO)
+  // 🎟️ MINT NFT LOGIC
   const mintNFT = async () => {
     if (!publicKey || !wallet) {
       setStatus("❌ Conecta tu wallet");
@@ -74,14 +74,10 @@ export default function Home() {
       );
 
       const mint = nft.address.toBase58();
-
       setTicket(mint);
       setTickets((prev) => [...prev, mint]);
-
-      // 💰 financiamiento
       setFunds((prev) => prev + 1);
 
-      // 🔥 GUARDAR TICKET EN FIREBASE (NUEVO)
       await addDoc(collection(db, "tickets"), {
         mint,
         owner: publicKey.toBase58(),
@@ -91,31 +87,28 @@ export default function Home() {
         price: 0,
       });
 
-      setStatus("🎉 NFT creado REAL");
+      setStatus("🎉 NFT creado con éxito");
     } catch (error) {
       console.error(error);
       setStatus("❌ Error creando NFT");
     }
   };
 
-  // 🔗 VALIDACIÓN ORIGINAL
   const validarNFT = async (mintAddress: string) => {
     try {
       const metaplex = Metaplex.make(connection);
-
       await metaplex.nfts().findByMint({
         mintAddress: new PublicKey(mintAddress),
       });
-
       setStatus("✅ NFT válido en blockchain");
     } catch {
       setStatus("❌ NFT inválido");
     }
   };
 
-  // 📷 SCANNER ORIGINAL
+  // 📷 SCANNER LOGIC (Corregido para solo inicializar en Organizer)
   useEffect(() => {
-    if (!scannerActive) return;
+    if (!scannerActive || view !== "organizer") return;
 
     const scanner = new Html5QrcodeScanner(
       "reader",
@@ -135,72 +128,41 @@ export default function Home() {
     return () => {
       scanner.clear().catch(() => {});
     };
-  }, [scannerActive]);
+  }, [scannerActive, view]);
 
-  // 🔥 CARGAR EVENTOS
+  // 🔥 FIREBASE DATA LOADING
   useEffect(() => {
-    const loadEvents = async () => {
-      const snapshot = await getDocs(collection(db, "events"));
+    const loadData = async () => {
+      const eventSnap = await getDocs(collection(db, "events"));
+      setEvents(eventSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setEvents(data);
+      const marketSnap = await getDocs(collection(db, "market"));
+      setMarket(marketSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
-
-    loadEvents();
+    loadData();
   }, []);
 
-  // 🔥 CARGAR MARKET
-  useEffect(() => {
-    const loadMarket = async () => {
-      const snapshot = await getDocs(collection(db, "market"));
-
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setMarket(data);
-    };
-
-    loadMarket();
-  }, []);
-
-  // 🔥 CREAR EVENTO
   const createEvent = async () => {
     if (!newEvent) return;
-
     const docRef = await addDoc(collection(db, "events"), {
       name: newEvent,
       createdAt: Date.now(),
     });
-
-    setEvents((prev) => [
-      ...prev,
-      { id: docRef.id, name: newEvent },
-    ]);
-
+    setEvents((prev) => [...prev, { id: docRef.id, name: newEvent }]);
     setNewEvent("");
   };
 
-  // 🔥 VENDER TICKET
   const sellTicket = async (ticket: any) => {
     await addDoc(collection(db, "market"), {
       ...ticket,
       price: 0.1,
       seller: ticket.owner,
     });
-
-    alert("Ticket en venta 🚀");
+    alert("Ticket listado en Marketplace 🚀");
   };
 
-  // 🔥 COMPRAR TICKET (SOL REAL)
   const buyTicket = async (ticket: any) => {
     if (!publicKey || !wallet) return;
-
     try {
       const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -209,27 +171,19 @@ export default function Home() {
           lamports: 0.1 * 1000000000,
         })
       );
-
-      const signature = await wallet.adapter.sendTransaction(
-        transaction,
-        connection
-      );
-
+      const signature = await wallet.adapter.sendTransaction(transaction, connection);
       await connection.confirmTransaction(signature, "confirmed");
-
-      alert("Compra realizada 🚀");
+      alert("Compra realizada con éxito 🚀");
     } catch (error) {
       console.error(error);
     }
   };
 
   if (!mounted) return null;
-
   if (!user) return <Login />;
 
   return (
-    <div className="flex h-screen" style={{ background: "#0a0f1e" }}>
-
+    <div className="flex min-h-screen bg-[#0a0a0b] text-white h-screen" style={{ background: "#0a0f1e" }}>
       <Sidebar setView={setView} />
 
       <div className="flex-1 p-6 space-y-6 overflow-y-auto" style={{ background: "#0a0f1e" }}>
@@ -285,7 +239,14 @@ export default function Home() {
               style={{ width: `${(funds / goal) * 100}%`, background: "linear-gradient(90deg, #7c3aed, #06b6d4)" }}
             ></div>
           </div>
-        </div>
+          <div className="w-full bg-black/40 h-3 rounded-full overflow-hidden border border-white/5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(funds / goal) * 100}%` }}
+              className="bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 h-full shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+            />
+          </div>
+        </section>
 
         {/* EVENTOS */}
         {view === "home" && (
@@ -317,6 +278,36 @@ export default function Home() {
           </div>
         )}
 
+          {/* PERFIL: MIS TICKETS */}
+          {view === "profile" && (
+            <div className="space-y-6">
+              <h2 className="text-3xl font-black">Mis Activos</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {tickets.map((t, i) => (
+                  <div key={i} className="bg-[#1c1c1f] p-5 rounded-3xl border border-white/10 text-center">
+                    <div className="bg-white p-3 rounded-2xl mb-4 inline-block shadow-xl">
+                      <QRCodeCanvas value={t} size={150} />
+                    </div>
+                    <p className="text-xs text-gray-500 truncate mb-4">{t}</p>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => validarNFT(t)}
+                        className="w-full py-2 bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 rounded-xl hover:bg-cyan-500 hover:text-white transition-all font-bold"
+                      >
+                        Validar
+                      </button>
+                      <button
+                        onClick={() => sellTicket({ mint: t, owner: publicKey?.toBase58() })}
+                        className="w-full py-2 bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 rounded-xl hover:bg-yellow-500 hover:text-white transition-all font-bold"
+                      >
+                        Listar para Venta
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         {/* PERFIL */}
         {view === "profile" && (
           <div>
@@ -405,7 +396,100 @@ export default function Home() {
             )}
           </div>
         )}
+          {/* MARKETPLACE */}
+          {view === "market" && (
+            <div className="space-y-6">
+              <h2 className="text-3xl font-black">Marketplace P2P</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {market.map((t) => (
+                  <div key={t.id} className="bg-[#161618] p-6 rounded-3xl border border-white/5 flex flex-col justify-between">
+                    <div>
+                      <div className="text-xs text-purple-400 font-mono mb-2 uppercase tracking-widest">Mint Address</div>
+                      <p className="text-sm break-all text-gray-400 mb-6">{t.mint}</p>
+                    </div>
+                    <button
+                      onClick={() => buyTicket(t)}
+                      className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl font-black text-lg hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all"
+                    >
+                      Comprar por {t.price} SOL
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
+          {/* ORGANIZADOR: SCANNER Y CREACIÓN */}
+          {view === "organizer" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* CREAR EVENTO */}
+              <div className="bg-[#161618] p-8 rounded-3xl border border-white/5 space-y-6">
+                <h2 className="text-2xl font-bold italic">Configurar Nuevo Evento</h2>
+                <div className="space-y-4">
+                  <input
+                    placeholder="Ej. Solana Sync Night"
+                    className="bg-black/50 border border-white/10 p-4 w-full rounded-2xl focus:border-purple-500 focus:outline-none transition-all"
+                    value={newEvent}
+                    onChange={(e) => setNewEvent(e.target.value)}
+                  />
+                  <button
+                    onClick={createEvent}
+                    className="bg-white text-black w-full py-4 rounded-2xl font-black text-lg hover:bg-purple-500 hover:text-white transition-all shadow-xl"
+                  >
+                    Publicar Evento
+                  </button>
+                </div>
+                <div className="pt-4 border-t border-white/5">
+                  <h3 className="text-gray-500 text-sm mb-4 uppercase">Eventos Activos</h3>
+                  {events.map((e) => (
+                    <div key={e.id} className="bg-black/30 p-3 mb-2 rounded-xl border border-white/5 text-sm">
+                      ✨ {e.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* QR SCANNER (Solo en esta vista) */}
+              <div className="bg-[#161618] p-8 rounded-3xl border border-white/5 flex flex-col items-center">
+                <h2 className="text-2xl font-bold mb-6 italic text-cyan-400">Validación de Puerta</h2>
+                
+                {!scannerActive ? (
+                  <button
+                    onClick={() => setScannerActive(true)}
+                    className="flex flex-col items-center justify-center gap-4 group"
+                  >
+                    <div className="w-24 h-24 bg-cyan-500/10 rounded-full flex items-center justify-center border border-cyan-500/20 group-hover:scale-110 transition-transform">
+                      <span className="text-4xl">📷</span>
+                    </div>
+                    <span className="text-cyan-400 font-bold tracking-widest uppercase text-xs">Activar Cámara</span>
+                  </button>
+                ) : (
+                  <div className="w-full max-w-sm overflow-hidden rounded-2xl border-2 border-cyan-500 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+                    <div id="reader" className="w-full"></div>
+                    <button 
+                      onClick={() => setScannerActive(false)}
+                      className="w-full bg-red-500/20 text-red-500 py-2 text-xs font-bold uppercase tracking-tighter"
+                    >
+                      Cancelar Escaneo
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* STATUS NOTIFICATION (Toaster style) */}
+        {status && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-8 right-8 bg-white text-black px-6 py-4 rounded-2xl font-bold shadow-2xl border-l-4 border-purple-500 z-50 flex items-center gap-3"
+          >
+            {status}
+            <button onClick={() => setStatus("")} className="ml-4 opacity-30 hover:opacity-100">✕</button>
+          </motion.div>
+        )}
         {/* ORGANIZADOR */}
         {view === "organizer" && (
           <div className="rounded-2xl border border-[rgba(255,255,255,0.12)] bg-[rgba(15,23,42,0.45)] backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-5 space-y-4 text-white">
@@ -467,6 +551,20 @@ export default function Home() {
 
         {status && <p className="text-sm p-3 rounded-lg bg-[rgba(124,58,237,0.2)] border border-[rgba(124,58,237,0.5)] text-white">{status}</p>}
       </div>
+
+      <style jsx global>{`
+        .wallet-adapter-button {
+          background-color: transparent !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          border-radius: 12px !important;
+          font-weight: 700 !important;
+          height: 40px !important;
+          line-height: 40px !important;
+        }
+        .wallet-adapter-button:hover {
+          background-color: rgba(255,255,255,0.05) !important;
+        }
+      `}</style>
     </div>
   );
 }
